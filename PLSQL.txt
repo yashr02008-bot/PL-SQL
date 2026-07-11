@@ -1,0 +1,312 @@
+Q-1.
+
+
+SET SERVEROUTPUT ON;
+
+
+    v_name    VARCHAR2(50) := 'Your Name';
+    v_roll_no NUMBER := 25;   -- Replace with your roll number
+    v_message VARCHAR2(100) := 'Welcome to PL/SQL!';
+    v_lucky   NUMBER;
+BEGIN
+    -- Print name and roll number
+    DBMS_OUTPUT.PUT_LINE('Name       : ' || v_name);
+    DBMS_OUTPUT.PUT_LINE('Roll Number: ' || v_roll_no);
+
+    -- Print welcome message
+    DBMS_OUTPUT.PUT_LINE(v_message);
+
+    -- Calculate lucky number
+    v_lucky := MOD(v_roll_no, 7) + 1;
+
+    -- Print lucky number
+    DBMS_OUTPUT.PUT_LINE('Lucky Number: ' || v_lucky);
+END;
+/
+
+
+Output.
+Name	   : Your Name
+Roll Number: 25
+Welcome to PL/SQL!
+Lucky Number: 5
+
+Q-2.
+
+
+DECLARE
+    v_name       VARCHAR2(50) := 'Rohan Sharma';
+    v_marks      NUMBER(5,2)  := 435.00; -- Mock last semester marks out of 500
+    v_percentage NUMBER(5,2);
+    v_dob        DATE         := TO_DATE('15-MAY-2004', 'DD-MON-YYYY');
+    v_passed     BOOLEAN      := TRUE;
+BEGIN
+    -- Calculate percentage rounded to 2 decimal places
+    v_percentage := ROUND((v_marks / 500) * 100, 2);
+    
+    -- Print Name, Marks, Percentage, and Today's Date
+    DBMS_OUTPUT.PUT_LINE('Name: ' || v_name || ' | Marks: ' || v_marks || ' | %: ' || v_percentage || '%');
+    DBMS_OUTPUT.PUT_LINE('Today''s Date: ' || TO_CHAR(SYSDATE, 'DD-MON-YYYY HH24:MI:SS'));
+    
+    -- Conditional print based on Boolean variable
+    IF v_passed THEN
+        DBMS_OUTPUT.PUT_LINE('Result: PASS');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Result: FAIL');
+    END IF;
+END;
+/
+
+Output.
+Rohan Sharma | Marks:435 | %:87
+Today's Date: 10-JUL-2026
+Result: PASS
+
+Q-3.
+
+DECLARE
+    c_gst_rate CONSTANT NUMBER := 18;
+    v_base_price        NUMBER := 15 * 500 + 1000; -- Roll No 15 -> 8500
+    v_cgst              NUMBER;
+    v_sgst              NUMBER;
+    v_total             NUMBER;
+    v_city              VARCHAR2(50) := NULL;
+BEGIN
+    v_cgst  := v_base_price * 9 / 100;
+    v_sgst  := v_base_price * 9 / 100;
+    v_total := v_base_price + (v_cgst * 2);
+    
+    DBMS_OUTPUT.PUT_LINE('Base: ' || v_base_price || ', CGST: ' || v_cgst || ', SGST: ' || v_sgst || ', Total: ' || v_total);
+    DBMS_OUTPUT.PUT_LINE('NVL Replacement: ' || NVL(v_city, 'Ahmedabad'));
+    DBMS_OUTPUT.PUT_LINE('NVL2 Evaluation: ' || NVL2(v_city, 'City Known: ' || v_city, 'City Unknown'));
+END;
+/
+
+Output.
+
+Base: 8500, CGST: 765, SGST: 765, Total: 10030
+NVL Replacement: Ahmedabad
+NVL2 Evaluation: City Unknown
+
+
+
+
+
+Q-4.
+
+
+DECLARE
+    -- Valid ID: 100 + (15 MOD 7) = 101
+    v_id1 NUMBER := 101; 
+    v_id2 NUMBER := 15; 
+    v_fname employees.first_name%TYPE;
+    v_sal   employees.salary%TYPE;
+BEGIN
+    SELECT first_name, salary INTO v_fname, v_sal FROM employees WHERE employee_id = v_id1;
+    DBMS_OUTPUT.PUT_LINE('Employee: ' || v_fname || ' earns Rs.' || v_sal || ' per month.');
+
+    BEGIN
+        SELECT first_name, salary INTO v_fname, v_sal FROM employees WHERE employee_id = v_id2;
+    EXCEPTION 
+        WHEN NO_DATA_FOUND THEN 
+            DBMS_OUTPUT.PUT_LINE('Employee not found — check the ID.');
+    END;
+END;
+/
+
+Output.
+Employee: Neena earns Rs.17000 per month.
+Employee not found — check the ID.
+
+
+
+
+
+
+
+
+Q-5.
+
+DECLARE
+    -- Valid ID: 100 + (15 MOD 9) + 1 = 107
+    v_id  NUMBER := 107;
+    v_emp employees%ROWTYPE;
+    v_yrs NUMBER;
+BEGIN
+    SELECT * INTO v_emp FROM employees WHERE employee_id = v_id;
+    v_yrs := TRUNC(MONTHS_BETWEEN(SYSDATE, v_emp.hire_date) / 12);
+    
+    DBMS_OUTPUT.PUT_LINE('Name: ' || v_emp.first_name || ' ' || v_emp.last_name || ' | Job: ' || v_emp.job_id);
+    DBMS_OUTPUT.PUT_LINE('Department ID: ' || v_emp.department_id || ' | Salary: ' || TO_CHAR(v_emp.salary, 'Rs.99,999'));
+    DBMS_OUTPUT.PUT_LINE('Hire Date: ' || TO_CHAR(v_emp.hire_date, 'DD-MON-YYYY') || ' | Experience: ' || v_yrs || ' years');
+    
+    IF v_yrs > 10 THEN
+        DBMS_OUTPUT.PUT_LINE('Status: Senior Employee');
+    END IF;
+END;
+/
+
+Output.
+Name: Diana Lorentz | Job: IT_PROG
+Department ID: 60 | Salary: Rs. 4,200
+Hire Date: 07-FEB-2007 | Experience: 19 years
+Status: Senior Employee
+
+
+
+Q-6.
+
+
+DECLARE
+    v_p        NUMBER := 15 * 1000;      -- 15000
+    v_r        NUMBER := 5 * 0.5 + 4;    -- 6.5
+    v_t        NUMBER := 3;
+    v_si       NUMBER;
+    v_ci       NUMBER;
+    v_diff_pct NUMBER;
+BEGIN
+    v_si       := v_p * v_r * v_t / 100;
+    v_ci       := v_p * (POWER(1 + v_r / 100, v_t)) - v_p;
+    v_diff_pct := (v_ci - v_si) / v_si * 100;
+    
+    DBMS_OUTPUT.PUT_LINE('SI Amt: ' || TO_CHAR(v_p + v_si, '99,999.99') || ' | CI Amt: ' || TO_CHAR(v_p + v_ci, '99,999.99'));
+    DBMS_OUTPUT.PUT_LINE('Difference: ' || TO_CHAR(v_ci - v_si, '99,999.99'));
+    
+    IF v_diff_pct > 10 THEN
+        DBMS_OUTPUT.PUT_LINE('Tip: FD is better than savings account for this amount.');
+    END IF;
+END;
+/
+
+Output.
+SI Amt:  17,925.00 | CI Amt:  18,119.34
+Difference:     194.34
+
+
+
+
+
+Q-7.
+
+
+<<outer>>
+DECLARE
+    v_city VARCHAR2(30) := 'Rajkot';
+    v_num  NUMBER       := 100;
+BEGIN
+    <<middle>>
+    DECLARE
+        v_city VARCHAR2(30) := 'Ahmedabad';
+        v_num  NUMBER       := 200;
+    BEGIN
+        DBMS_OUTPUT.PUT_LINE('Middle Block -> Local City: ' || v_city || ' | Outer City: ' || outer.v_city);
+        
+        <<inner>>
+        DECLARE
+            v_num NUMBER := 300;
+        BEGIN
+            DBMS_OUTPUT.PUT_LINE('Inner Block -> Num: ' || v_num || ' | Middle Num: ' || middle.v_num);
+        END inner;
+    END middle;
+    
+    DBMS_OUTPUT.PUT_LINE('Outer Block -> Preserved City: ' || v_city);
+END outer;
+/
+
+
+Output.
+Middle Block -> Local City: Ahmedabad | Outer City: Rajkot
+Inner Block -> Num: 300 | Middle Num: 200
+Outer Block -> Preserved City: Rajkot
+
+
+Q-8.
+
+
+DECLARE
+    v_name  VARCHAR2(50) := 'Rohan Sharma';
+    v_roll  NUMBER       := 15;
+    v_dob   DATE         := TO_DATE('15-MAY-2004', 'DD-MON-YYYY');
+    v_upper VARCHAR2(50);
+    v_first VARCHAR2(50);
+    v_id    VARCHAR2(20);
+    v_age   NUMBER;
+BEGIN
+    v_upper := UPPER(v_name);
+    v_first := SUBSTR(v_upper, 1, INSTR(v_upper, ' ') - 1);
+    v_id    := 'LJICA' || TO_CHAR(v_dob, 'YYYY') || LPAD(v_roll, 3, '0');
+    v_age   := TRUNC(MONTHS_BETWEEN(SYSDATE, v_dob) / 12);
+        DBMS_OUTPUT.PUT_LINE('| ' || RPAD('ID Card: LJICA College', 38) || ' |');
+    DBMS_OUTPUT.PUT_LINE('| ' || RPAD('ID: ' || v_id, 38) || ' |');
+    DBMS_OUTPUT.PUT_LINE('| ' || RPAD('Name: ' || v_upper, 38) || ' |');
+    DBMS_OUTPUT.PUT_LINE('| ' || RPAD('First Name: ' || v_first, 38) || ' |');
+    DBMS_OUTPUT.PUT_LINE('| ' || RPAD('Age: ' || v_age, 38) || ' |');
+
+END;
+/
+
+Output.
+| ID Card: LJICA College                 |
+| ID: LJICA2004015                       |
+| Name: ROHAN SHARMA                     |
+| First Name: ROHAN                      |
+| Age: 22                                |
+
+
+Q-9.
+
+
+DECLARE
+    v_units         NUMBER := 15 * 10 + 50; -- 200
+    c_rate  CONSTANT NUMBER := 5;
+    c_fixed CONSTANT NUMBER := 70;
+    v_energy        NUMBER;
+    v_total         NUMBER;
+BEGIN
+    v_energy := v_units * c_rate;
+    v_total  := v_energy + c_fixed;
+    
+    DBMS_OUTPUT.PUT_LINE('Consumer Name: Rohan Sharma');
+    DBMS_OUTPUT.PUT_LINE('Units Consumed: ' || v_units);
+    DBMS_OUTPUT.PUT_LINE('Energy Charge: Rs.' || v_energy);
+    DBMS_OUTPUT.PUT_LINE('Fixed Charge: Rs.' || c_fixed);
+    DBMS_OUTPUT.PUT_LINE('Total Bill: Rs.' || v_total);
+END;
+/
+
+Output.
+Consumer Name: Rohan Sharma
+Units Consumed: 200
+Energy Charge: Rs.1000
+Fixed Charge: Rs.70
+Total Bill: Rs.1070
+
+
+	
+Q-10.
+
+
+DECLARE
+    v_celsius NUMBER := MOD(15, 20) + 25; -- 40
+    v_f       NUMBER;
+    v_k       NUMBER;
+    v_f2      NUMBER := 98.6;
+    v_c2      NUMBER;
+BEGIN
+    v_f := ROUND(v_celsius * 9 / 5 + 32, 1);
+    v_k := v_celsius + 273.15;
+    DBMS_OUTPUT.PUT_LINE('C: ' || v_celsius || ' | F: ' || v_f || ' | K: ' || v_k);
+    
+    v_c2 := (v_f2 - 32) * 5 / 9;
+    DBMS_OUTPUT.PUT_LINE('Reversed 98.6F to C: ' || v_c2);
+    
+    /* Observation: C*9/5+32 yields the exact same value as C*(9/5)+32. 
+       Multiplication and division follow a strict left-to-right order of 
+       precedence here, making the extra brackets functionally redundant. */
+END;
+/
+
+Output.
+C: 40 | F: 104 | K: 313.15
+Reversed 98.6F to C: 37
+
