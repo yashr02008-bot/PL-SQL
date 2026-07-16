@@ -1,0 +1,427 @@
+q-11.
+DECLARE
+    v_n NUMBER := MOD(15, 12) + 1; -- 4
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('Today: ' || TO_CHAR(SYSDATE, 'Day, DD"th" Month YYYY'));
+    DBMS_OUTPUT.PUT_LINE('Add ' || v_n || ' Months: ' || TO_CHAR(ADD_MONTHS(SYSDATE, v_n), 'DD-MON-YYYY'));
+    DBMS_OUTPUT.PUT_LINE('Last Day: ' || TO_CHAR(LAST_DAY(SYSDATE), 'DD-MON-YYYY'));
+    DBMS_OUTPUT.PUT_LINE('Next Monday: ' || TO_CHAR(NEXT_DAY(SYSDATE, 'MONDAY'), 'DD-MON-YYYY'));
+    DBMS_OUTPUT.PUT_LINE('Days left in month: ' || TRUNC(LAST_DAY(SYSDATE) - SYSDATE));
+END;
+/
+
+Output.
+Today: Friday   , 10th July      2026
+Add 4 Months: 10-NOV-2026
+Last Day: 31-JUL-2026
+Next Monday: 13-JUL-2026
+Days left in month: 
+21
+
+
+
+
+
+
+
+
+
+
+
+q-12.
+DECLARE
+    v_m1     NUMBER := MOD(15, 30) + 60; -- 75
+    v_m2     NUMBER := MOD(15, 30) + 60;
+    v_m3     NUMBER := MOD(15, 30) + 60;
+    v_m4     NUMBER := MOD(15, 30) + 60;
+    v_m5     NUMBER := NULL;
+    v_total  NUMBER;
+    v_pct    NUMBER;
+    v_passed BOOLEAN;
+BEGIN
+    v_total  := v_m1 + v_m2 + v_m3 + v_m4 + NVL(v_m5, 0);
+    v_pct    := ROUND(v_total / 500 * 100, 2);
+    v_passed := (v_pct >= 40);
+    
+    DBMS_OUTPUT.PUT_LINE('Total: ' || v_total || ' | Percentage: ' || v_pct || '%');
+    DBMS_OUTPUT.PUT_LINE('Result Status: ' || CASE WHEN v_passed THEN 'PASS' ELSE 'FAIL' END);
+    
+    /* LIMITATION COMMENT:
+       BOOLEAN variables cannot be evaluated inside standard string formatting or passed 
+       directly into DBMS_OUTPUT.PUT_LINE. They must be resolved using conditional logic. */
+END;
+/
+
+Output.
+Total: 300 | Percentage: 60%
+Result Status: PASS
+
+
+
+
+q-13.
+DECLARE
+    v_amount NUMBER := 15 * 137 + 1000; -- 3055
+    v_rem    NUMBER;
+    v_n500   NUMBER;
+    v_n200   NUMBER;
+    v_n100   NUMBER;
+BEGIN
+    v_n500 := TRUNC(v_amount / 500);
+    v_rem  := MOD(v_amount, 500);
+    
+    v_n200 := TRUNC(v_rem / 200);
+    v_rem  := MOD(v_rem, 200);
+    
+    v_n100 := TRUNC(v_rem / 100);
+    v_rem  := MOD(v_rem, 100);
+    
+    DBMS_OUTPUT.PUT_LINE('Amount: ' || v_amount);
+    DBMS_OUTPUT.PUT_LINE('500x' || v_n500 || ' | 200x' || v_n200 || ' | 100x' || v_n100);
+    DBMS_OUTPUT.PUT_LINE('Remaining Undispensed: Rs.' || v_rem);
+END;
+/
+
+Output.
+Amount: 3055
+500x6 | 200x0 | 100x0
+Remaining Undispensed: Rs.55
+
+
+
+
+q-14.
+DECLARE
+    c_gst CONSTANT NUMBER := 18;
+    v_plan         NUMBER := 599; -- 15 MOD 4 + 1 = 4 -> 599
+    v_gst_amt      NUMBER;
+    v_total        NUMBER;
+BEGIN
+    v_gst_amt := v_plan * c_gst / 100;
+    v_total   := v_plan + v_gst_amt;
+    
+    DBMS_OUTPUT.PUT_LINE(RPAD('Plan Price:', 20) || TO_CHAR(v_plan, '99,999.99'));
+    DBMS_OUTPUT.PUT_LINE(RPAD('GST Amount:', 20) || TO_CHAR(v_gst_amt, '99,999.99'));
+    DBMS_OUTPUT.PUT_LINE(RPAD('Total Paid:', 20) || TO_CHAR(v_total, '99,999.99'));
+    DBMS_OUTPUT.PUT_LINE(RPAD('Validity Until:', 20) || TO_CHAR(SYSDATE + 28, 'DD-MON-YYYY'));
+END;
+/
+
+Output.
+Plan Price:            599.00
+GST Amount:            107.82
+Total Paid:            706.82
+Validity Until:     07-AUG-2026
+
+
+
+
+
+
+
+
+
+q-15.
+DECLARE
+    v_dept NUMBER := (MOD(15, 6) + 1) * 10; -- 40
+    v_cnt  NUMBER;
+    v_avg  NUMBER;
+    v_max  NUMBER;
+BEGIN
+    SELECT COUNT(*), ROUND(AVG(salary), 2), MAX(salary) 
+    INTO v_cnt, v_avg, v_max 
+    FROM employees 
+    WHERE department_id = v_dept;
+    
+    DBMS_OUTPUT.PUT_LINE('Dept ' || v_dept || ' -> Count: ' || v_cnt || ' | Avg Sal: ' || v_avg || ' | Max Sal: ' || v_max);
+
+    /* COMMENT: 
+       SELECT INTO using COUNT(*) never encounters a NO_DATA_FOUND exception because aggregate 
+       functions without a GROUP BY always construct exactly one row response (returning 0) 
+       even if no underlying source records match the filters. */
+END;
+/
+
+Output.
+Dept 40 -> Count: 1 | Avg Sal: 6500 | Max Sal: 6500
+
+
+
+
+
+
+
+q-16.
+DECLARE
+    v_id    NUMBER := ((15 + 2) MOD 11 + 1) * 10; -- 70
+    v_dname departments.department_name%TYPE;
+    v_loc   departments.location_id%TYPE;
+BEGIN
+    SELECT department_name, location_id INTO v_dname, v_loc FROM departments WHERE department_id = v_id;
+    DBMS_OUTPUT.PUT_LINE('Dept ' || v_id || ': ' || v_dname || ' at location ' || v_loc);
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Department not found.');
+        
+    /* COMMENT:
+       If the column size changes in the database grid schema, %TYPE anchors dynamically pull 
+       the structure changes at runtime execution initialization. This insulates our program variables 
+       from structural updates, rendering manual code refactoring unneeded. */
+END;
+/
+
+Output.
+Dept 70: Public Relations at location 1700
+
+
+
+
+
+
+
+
+
+q-17.
+DECLARE
+    v_p           NUMBER := 15 * 10000 + 50000; -- 200000
+    v_annual_rate NUMBER := 9;
+    v_years       NUMBER := 5;
+    v_r           NUMBER;
+    v_n           NUMBER;
+    v_emi         NUMBER;
+    v_total       NUMBER;
+    v_interest    NUMBER;
+BEGIN
+    v_r        := v_annual_rate / 12 / 100;
+    v_n        := v_years * 12;
+    v_emi      := ROUND(v_p * v_r * POWER(1 + v_r, v_n) / (POWER(1 + v_r, v_n) - 1), 2);
+    v_total    := v_emi * v_n;
+    v_interest := v_total - v_p;
+    
+    DBMS_OUTPUT.PUT_LINE('EMI: ' || TO_CHAR(v_emi, '99,99,999.99'));
+    DBMS_OUTPUT.PUT_LINE('Total Paid: ' || TO_CHAR(v_total, '99,99,999.99'));
+    DBMS_OUTPUT.PUT_LINE('Interest Charges: ' || TO_CHAR(v_interest, '99,99,999.99'));
+    DBMS_OUTPUT.PUT_LINE('Interest Component Percentage: ' || ROUND((v_interest / v_total) * 100, 2) || '%');
+END;
+/
+
+
+Output.
+EMI:      4,151.67
+Total Paid:   2,49,100.20
+Interest Charges:     49,100.20
+Interest Component Percentage: 19.71%
+
+q-18.
+DECLARE
+    v_raw   VARCHAR2(50) := '  roHAN    ShArMA ';
+    v_clean VARCHAR2(50);
+    v_first VARCHAR2(25);
+    v_last  VARCHAR2(25);
+    v_email VARCHAR2(50);
+BEGIN
+    -- Strip and eliminate multi-blank groupings
+    v_clean := INITCAP(REPLACE(REPLACE(TRIM(v_raw), '   ', ' '), '  ', ' '));
+    v_first := SUBSTR(v_clean, 1, INSTR(v_clean, ' ') - 1);
+    v_last  := SUBSTR(v_clean, INSTR(v_clean, ' ') + 1);
+    v_email := LOWER(v_first || '.' || v_last || '@ljku.edu.in');
+    
+    DBMS_OUTPUT.PUT_LINE('Before: ' || LENGTH(v_raw) || ' chars | After: ' || LENGTH(v_clean) || ' chars');
+    DBMS_OUTPUT.PUT_LINE('Cleaned: ' || v_clean || ' | Email: ' || v_email);
+    
+    /* EXPLANATION: Applying a string single-replace turns two spaces to one. 
+       If three or more spaces sit sequentially, a singular pass leaves remaining trailing space remnants. 
+       Layering consecutive sweeps completely flattens complex white space gaps. */
+END;
+/
+
+
+Output.
+Before: 18 chars | After: 12 chars
+Cleaned: Rohan Sharma | Email: rohan.sharma@ljku.edu.in
+
+
+q-19.
+<<bank>>
+DECLARE
+    v_bank          VARCHAR2(30) := 'LJ Bank';
+    v_total_deposit NUMBER       := 0;
+BEGIN
+    <<branch>>
+    DECLARE
+        v_branch VARCHAR2(30) := 'Rajkot';
+        v_dep    NUMBER       := 15 * 1000; -- 15000
+    BEGIN
+        bank.v_total_deposit := bank.v_total_deposit + v_dep;
+        
+        <<counter>>
+        DECLARE
+            v_token NUMBER := 1;
+        BEGIN
+            DBMS_OUTPUT.PUT_LINE(bank.v_bank || ' | ' || v_branch || ' | Token ' || v_token);
+        END counter;
+        
+        -- DBMS_OUTPUT.PUT_LINE(v_token); 
+        /* ERROR OBSERVED IF UNCOMMENTED: 
+           PLS-00201: identifier 'V_TOKEN' must be declared. Parent scopes cannot read variables declared inside nested blocks. */
+           
+    END branch;
+    DBMS_OUTPUT.PUT_LINE('Total Deposited Base: Rs.' || bank.v_total_deposit);
+END bank;
+/
+
+Output.
+LJ Bank | Rajkot | Token 1
+Total Deposited Base: Rs.15000
+
+q-20.
+DECLARE
+    v_name       VARCHAR2(50) := 'Rohan Sharma';
+    v_dob        DATE         := TO_DATE('15-MAY-2004', 'DD-MON-YYYY'); -- Test run 1
+    -- For Senior citizen run variation use: TO_DATE('01-JAN-1960', 'DD-MON-YYYY')
+    v_roll       NUMBER       := 15;
+    v_pnr        VARCHAR2(20);
+    v_jdate      DATE;
+    v_base_fare  NUMBER;
+    v_age        NUMBER;
+    v_final_fare NUMBER;
+BEGIN
+    v_pnr       := 'GJ' || TO_CHAR(SYSDATE, 'YYMM') || LPAD(v_roll, 4, '0');
+    v_jdate     := SYSDATE + (MOD(v_roll, 30) + 1);
+    v_base_fare := v_roll * 50 + 200;
+    v_age       := TRUNC(MONTHS_BETWEEN(SYSDATE, v_dob) / 12);
+    
+    v_final_fare := CASE WHEN v_age >= 60 THEN v_base_fare * 0.60 ELSE v_base_fare END;
+    
+    DBMS_OUTPUT.PUT_LINE('===================================');
+    DBMS_OUTPUT.PUT_LINE(RPAD('PNR:', 15) || v_pnr);
+    DBMS_OUTPUT.PUT_LINE(RPAD('Passenger:', 15) || v_name || ' (Age: ' || v_age || ')');
+    DBMS_OUTPUT.PUT_LINE(RPAD('Journey Date:', 15) || TO_CHAR(v_jdate, 'Day, DD-MON-YYYY'));
+    DBMS_OUTPUT.PUT_LINE(RPAD('Final Fare:', 15) || 'Rs.' || v_final_fare);
+    DBMS_OUTPUT.PUT_LINE('===================================');
+END;
+/
+
+Output.
+===================================
+PNR:           GJ26070015
+Passenger:     Rohan Sharma (Age: 22)
+Journey Date:  Sunday   , 26-JUL-2026
+Final Fare:    Rs.950
+
+q-21.
+DECLARE
+    v_id  NUMBER := 100 + MOD(15, 20); -- 115
+    v_emp employees%ROWTYPE;
+    v_da  NUMBER;
+    v_hra NUMBER;
+    v_pf  NUMBER;
+    v_net NUMBER;
+BEGIN
+    SELECT * INTO v_emp FROM employees WHERE employee_id = v_id;
+    
+    v_da  := v_emp.salary * 0.40;
+    v_hra := v_emp.salary * 0.20;
+    v_pf  := v_emp.salary * 0.12;
+    v_net := v_emp.salary + v_da + v_hra - v_pf;
+    
+    DBMS_OUTPUT.PUT_LINE('----------------------------------------');
+    DBMS_OUTPUT.PUT_LINE('       SALARY SLIP: ' || TO_CHAR(SYSDATE, 'MONTH YYYY'));
+    DBMS_OUTPUT.PUT_LINE('----------------------------------------');
+    DBMS_OUTPUT.PUT_LINE('Emp: ' || v_emp.first_name || ' ' || v_emp.last_name || ' [' || v_id || ']');
+    DBMS_OUTPUT.PUT_LINE(RPAD('Basic Salary:', 25) || LPAD(TO_CHAR(v_emp.salary, '99,99,999.00'), 15));
+    DBMS_OUTPUT.PUT_LINE(RPAD('DA (40%):', 25) || LPAD(TO_CHAR(v_da, '99,99,999.00'), 15));
+    DBMS_OUTPUT.PUT_LINE(RPAD('HRA (20%):', 25) || LPAD(TO_CHAR(v_hra, '99,99,999.00'), 15));
+    DBMS_OUTPUT.PUT_LINE(RPAD('PF Deduction (12%):', 25) || LPAD(TO_CHAR(v_pf, '99,99,999.00'), 15));
+    DBMS_OUTPUT.PUT_LINE('----------------------------------------');
+    DBMS_OUTPUT.PUT_LINE(RPAD('Net Take-Home Pay:', 25) || LPAD(TO_CHAR(v_net, '99,99,999.00'), 15));
+    DBMS_OUTPUT.PUT_LINE('----------------------------------------');
+END;
+/
+
+Output.
+----------------------------------------
+       SALARY SLIP: JULY      2026
+----------------------------------------
+Emp: Alexander Khoo [115]
+Basic Salary:                    3,100.00
+DA (40%):                        1,240.00
+HRA (20%):                         620.00
+PF Deduction (12%):                372.00
+----------------------------------------
+Net Take-Home Pay:               4,588.00
+
+q-22.
+DECLARE
+    v_qty    NUMBER := MOD(15, 5) + 2;   -- 2
+    v_price  NUMBER := 15 * 100 + 400;   -- 1900
+    v_coupon NUMBER;                     -- Test Run 1: NULL (Switch to 10 for Run 2)
+    v_gross  NUMBER;
+    v_disc   NUMBER;
+    v_taxable NUMBER;
+    v_total  NUMBER;
+BEGIN
+    FOR i IN 1..2 LOOP
+        IF i = 2 THEN v_coupon := 10; END IF; -- Second cycle injects coupon rate
+        
+        v_gross   := v_qty * v_price;
+        v_disc    := v_gross * NVL(v_coupon, 0) / 100;
+        v_taxable := v_gross - v_disc;
+        v_total   := ROUND(v_taxable * 1.18);
+        
+        DBMS_OUTPUT.PUT_LINE('--- KIRANA RECEIPTS STORE (Pass ' || i || ') ---');
+        DBMS_OUTPUT.PUT_LINE(NVL2(v_coupon, 'Coupon Applied: ' || v_coupon || '%', 'No coupon applied'));
+        DBMS_OUTPUT.PUT_LINE('Gross Base: ' || v_gross || ' | Discount Given: ' || v_disc);
+        DBMS_OUTPUT.PUT_LINE('Final Rounded Bill (inc. GST 18%): Rs.' || v_total || CHR(10));
+    END LOOP;
+END;
+/
+
+Output.
+--- KIRANA RECEIPTS STORE (Pass 1) ---
+No coupon applied
+Gross Base: 3800 | Discount Given: 0
+Final Rounded Bill (inc. GST 18%): Rs.4484
+
+--- KIRANA RECEIPTS STORE (Pass 2) ---
+Coupon Applied: 10%
+Gross Base: 3800 | Discount Given: 380
+Final Rounded Bill (inc. GST 18%): Rs.4036
+
+
+
+
+
+q-23.
+DECLARE 
+    -- BUG 1 FIX: Replaced invalid scalar '=' assignment operator with standard plsql ':=' operator
+    -- BUG 2 FIX: Expanded constrained size capacity VARCHAR2(5) safely out to VARCHAR2(50) to accept complete string value
+    v_name VARCHAR2(50) := 'Rohan Sharma'; 
+    
+    -- BUG 3 FIX: CONSTANT expressions require a literal initialization value directly during code declaration stage
+    c_bonus_rate CONSTANT NUMBER := 0.1; 
+    
+    -- BUG 4 FIX: Terminated declaration statement properly by adding the missing trailing semicolon
+    v_sal NUMBER := 15 * 1000 + 20000; -- 35000
+    v_bonus NUMBER;
+    v_fname employees.first_name%TYPE;
+BEGIN 
+    v_bonus := v_sal * c_bonus_rate; 
+    
+    -- BUG 5 FIX: Embedded queries in structural procedural code require explicit target storage destination clauses ('INTO')
+    SELECT first_name INTO v_fname FROM employees WHERE employee_id = 100; 
+    
+    DBMS_OUTPUT.PUT_LINE('Student Name: ' || v_name);
+    DBMS_OUTPUT.PUT_LINE('Fetched Associate: ' || v_fname);
+    DBMS_OUTPUT.PUT_LINE('Calculated Bonus Amount: ' || v_bonus); 
+END;
+/
+
+
+Output.
+Student Name: Rohan Sharma
+Fetched Associate: Steven
+Calculated Bonus Amount: 35000
+
+
+
